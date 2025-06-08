@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视差滚动图片画廊</title>
+    <style>
+        * {
+            padding: 0;/* 设置所有元素的内边距,内边距是元素内容与其边框之间的空间*/
+            margin: 0;/* 设置所有元素的外边距,外边距是元素边框之外的空间*/
+            box-sizing: border-box;/*width = 内容宽度 + padding + border*/
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;/* 垂直布局 */
+            justify-content: center; /* 垂直居中 */
+            align-items: center;/* 水平居中 */
+            min-height: 100vh;/* 至少占满整个视口高度 */
+           background: url('https://lcmimage.ecology.smoba.qq.com/public/8424125e29f5c903bb68d79947a8cf8c.jpg?sign=1749368524-rOLMjH-0-f7519e29673532924effc2c1c168d886&imageMogr2/thumbnail/650x') no-repeat center center;
+           background-size: 100% 100%;  /* 确保背景图片覆盖整个元素，保持比例 */
+            color: #fff;
+            padding: 10px;
+            overflow-x: hidden;/* 隐藏水平滚动条 */
+        }
+
+
+        main {
+            display: grid;/* 网格布局 */
+            gap: 2.5rem;/*列间距*/
+            grid-template-columns: repeat(3, minmax(300px, 1fr));/*使用grid布局，3列，每列最小300px，最大1fr（等分剩余空间）。*/
+            width: 100%;
+            max-width: 1600px;
+            overflow-y: hidden;
+            padding: 30px;/* 内边距 */
+           background: rgba(255, 255, 255, 0.5); /* 更透明的白色 */
+            border-radius: 30px;/* 圆角 */
+            backdrop-filter: blur(20px); /* 毛玻璃效果 */
+            box-shadow: 0 30px 10px rgba(0, 0, 0, 0);/* 阴影效果 */
+            /*- 水平偏移量：0（表示阴影在元素正下方）
+
+            - 垂直偏移量：30px（表示阴影向下延伸30px）
+
+            - 模糊半径：50px（阴影的模糊程度）
+
+            - 颜色：rgba(0,0,0,0.5)（半透明的黑色）*/
+        }
+
+        section {
+            display: flex;
+            gap: 2.5rem;/* 每个section是flex容器，垂直排列，项目间距2.5rem。*/
+            flex-direction: column;/* 垂直排列 */
+        }
+
+        /* 第一列和第三列应用视差效果 */
+        section:nth-child(1),
+        section:nth-child(3) {
+            animation: scroller linear;/* 应用动画 */
+            animation-timeline: scroll(root); /* 动画时间线与页面滚动关联 */
+            flex-direction: column-reverse;/* 反转元素顺序 */
+            translate: 0% calc(-100% + 100vh);/* 初始位置在底部 */
+        }
+
+        .image-container {
+            position: relative; /* 相对定位 */
+            border-radius: 20px; /* 圆角 */
+            overflow: hidden; /* 隐藏溢出内容 */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* 阴影 */
+            transition: all 0.4s ease; /* 过渡效果 */
+            height: 300px; /* 固定高度 */
+        }
+
+        .image-container img { 
+         transform-origin: center; 
+         width: 100%; /* 100%宽度 */
+         height: 100%; /* 100%高度 */
+         object-fit: cover; /* 保持比例并覆盖容器 */ 
+         display: block; /* 块级元素 */
+         transition: transform 0.5s ease; /* 过渡效果 */
+         transition: transform 0.3s ease;
+
+         /* 使用变量来设置transform-origin */
+
+         transform-origin: var(--origin-x) var(--origin-y);
+         }
+
+       .image-container {
+
+       /* 其他样式... */
+
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+      /* 设置一个默认的transform-origin，但后续会被JS覆盖 */
+
+      overflow: hidden; /* 防止图片放大时超出容器 */
+
+       }
+
+        .image-container:hover {
+            transform: translateY(-33px);/* 上移效果 */
+            box-shadow: 0 15px 35px rgb(0, 0, 0);/* 增强阴影 */
+        }
+
+        .image-container:hover img {
+            transform: scale(1.38);/*放大*/
+        }
+
+        /* 标题效果 */
+       .image-container::after {
+       content: attr(data-title); /* 从data-title属性获取内容 */
+       position: absolute; /* 绝对定位 */
+       bottom: 12px; /* 底部对齐 */
+       left: 0; /* 左侧对齐 */
+       width: 100%; /* 全宽 */
+       background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); /* 渐变背景 */
+       color: white; /* 白色文字 */
+       padding: 20px 15px 10px; /* 内边距 */
+       font-size: 1.1rem; /* 字体大小 */
+       text-align: center; /* 居中文本 */
+       opacity: 0; /* 初始透明 */
+       transform: translateY(20px); /* 初始位置下移 */
+       transition: all 0.4s ease; /* 过渡效果 */
+       }/*伪元素用于显示图片标题，初始透明度为0，向下偏移20px。*/
+
+        .image-container:hover::after {
+            opacity: 1;/* 显示标题 */
+            transform: translateY(0);/* 移回原位 */
+        }
+
+        /* 视差滚动动画 */
+        @keyframes scroller {
+            to {
+                translate: 0% calc(100% - 100vh);
+            }
+        }/*`scroller`：将元素从初始位置（底部）移动到顶部（100%高度减去视口高度）。*/
+
+        /* 渐变背景移动动画 */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }/*`gradientShift`：改变渐变背景的位置，实现流动效果*/
+
+        .info-panel {
+            background: rgba(15, 25, 60, 0.7);/* 半透明背景 */
+            border-radius: 15px;/* 圆角 */
+            padding: 25px;/* 内边距 */
+            margin-top: 40px; /* 上边距 */
+            max-width: 900px;/* 最大宽度 */
+            width: 100%;/* 100%宽度 */
+            border: 1px solid rgba(225, 195, 227, 0.514);/* 边框 */
+        }
+
+
+        @media (max-width: 1200px) {
+            main {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            section:nth-child(3) {
+                animation: none;
+                flex-direction: column;
+                translate: 0% 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+                padding: 15px;
+            }
+            
+            section:nth-child(1),
+            section:nth-child(3) {
+                animation: none;
+                flex-direction: column;
+                translate: 0% 0;
+            }
+            
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <section>
+           <div class="image-container" data-title="馥梦繁花">
+               <img src="https://shp.qpic.cn/ishow/2735052117/1747821355_829394697_19268_sProdImgNo_2.jpg/0" alt="繁星梦幻湖">
+           </div>
+           <div class="image-container" data-title="潮玩士官长">
+               <img src="https://shp.qpic.cn/ishow/2735053009/1748569504_829394697_49102_sProdImgNo_2.jpg/0" alt="城市微光">
+           </div>
+          <div class="image-container" data-title="命运加冕">
+               <img src="https://shp.qpic.cn/ishow/2735052810/1748397944_829394697_40840_sProdImgNo_2.jpg/0" alt="秘境暮光">
+           </div>
+            <div class="image-container" data-title="大耳狗之梦">
+               <img src="https://shp.qpic.cn/ishow/2735042909/1745891175_829394697_14212_sProdImgNo_2.jpg/0" alt="极光梦境">
+           </div>
+            <div class="image-container" data-title="酷洛米之心">
+               <img src="https://shp.qpic.cn/ishow/2735042909/1745891115_829394697_8500_sProdImgNo_2.jpg/0" alt="山脉晨曦">
+           </div>
+          <div class="image-container" data-title="布丁狗之誓">
+               <img src="https://shp.qpic.cn/ishow/2735042409/1745458944_829394697_8730_sProdImgNo_2.jpg/0" alt="海滨日落">
+           </div>
+            <div class="image-container" data-title="布丁狗之约">
+               <img src="https://shp.qpic.cn/ishow/2735042409/1745458890_829394697_48530_sProdImgNo_2.jpg/0" alt="峡谷霞光">
+           </div>
+        </section>
+        <section>
+            <div class="image-container" data-title="藏狐·褐绒">
+               <img src="https://shp.qpic.cn/ishow/2735041809/1744940629_829394697_48010_sProdImgNo_2.jpg/0" alt="樱花小径">
+           </div>
+           <div class="image-container" data-title="灵野札记">
+               <img src="https://shp.qpic.cn/ishow/2735041109/1744335756_829394697_22078_sProdImgNo_2.jpg/0" alt="森林晨曦">
+           </div>
+           <div class="image-container" data-title="兔狲·蓬尾">
+               <img src="https://shp.qpic.cn/ishow/2735041109/1744335640_829394697_11716_sProdImgNo_2.jpg/0" alt="竹林秘境">
+           </div>
+            <div class="image-container" data-title="雪豹·霜爪">
+               <img src="https://shp.qpic.cn/ishow/2735041109/1744335577_829394697_48932_sProdImgNo_2.jpg/0" alt="雪山之巅">
+           </div>
+            <div class="image-container" data-title="春野闲踪">
+               <img src="https://shp.qpic.cn/ishow/2735040710/1743991203_829394697_41731_sProdImgNo_2.jpg/0" alt="秋日湖畔">
+           </div>
+            <div class="image-container" data-title="秘证寻踪">
+               <img src="https://shp.qpic.cn/ishow/2735040218/1743590571_829394697_18801_sProdImgNo_2.jpg/0" alt="暮色港湾">
+           </div>
+            <div class="image-container" data-title="云诺千山">
+               <img src="https://shp.qpic.cn/ishow/2735040218/1743590504_829394697_12393_sProdImgNo_2.jpg/0" alt="云海奇观">
+           </div>
+        </section>
+        <section>
+            <div class="image-container" data-title="沈梦溪-鸭鸭历险记">
+               <img src="https://shp.qpic.cn/ishow/2735033117/1743414735_829394697_21682_sProdImgNo_2.jpg/0" alt="月夜森林">
+           </div>
+            <div class="image-container" data-title="鸭鸭历险记">
+               <img src="https://shp.qpic.cn/ishow/2735033117/1743414679_829394697_40773_sProdImgNo_2.jpg/0" alt="极地冰川">
+           </div>
+            <div class="image-container" data-title="龙之律动">
+               <img src="https://shp.qpic.cn/ishow/2735033117/1743414605_829394697_2333_sProdImgNo_2.jpg/0" alt="沙漠绿洲">
+           </div>
+            <div class="image-container" data-title="空空儿">
+               <img src="https://shp.qpic.cn/ishow/2735032711/1743047729_829394697_6554_sProdImgNo_2.jpg/0" alt="星空营地">
+           </div>
+            <div class="image-container" data-title="灵蛊蚀心">
+               <img src="https://shp.qpic.cn/ishow/2735032711/1743047673_829394697_32353_sProdImgNo_2.jpg/0" alt="古寺晨光">
+           </div>
+            <div class="image-container" data-title="虚灵犬护">
+               <img src="https://shp.qpic.cn/ishow/2735032111/1742528665_829394697_11456_sProdImgNo_2.jpg/0" alt="彩虹瀑布">
+           </div>
+            <div class="image-container" data-title="浪漫序章">
+               <img src="https://shp.qpic.cn/ishow/2735031315/1741852698_829394697_15956_sProdImgNo_2.jpg/0" alt="林间小屋">
+           </div>
+        </section>
+    </main>
+
+    <script>
+
+        document.querySelectorAll('.image-container').forEach(container => {
+
+        container.addEventListener('mousemove', (e) => {
+
+        // 计算鼠标在容器内的相对位置（百分比）
+
+        const rect = container.getBoundingClientRect();
+
+        const x = (e.clientX - rect.left) / rect.width * 100;
+
+        const y = (e.clientY - rect.top) / rect.height * 100;
+
+       // 设置CSS变量
+
+       container.style.setProperty('--origin-x', `${x}%`);
+
+      container.style.setProperty('--origin-y', `${y}%`);
+
+      });
+
+      });
+    </script>
+
+</body>
+</html>
